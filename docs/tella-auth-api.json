@@ -1,0 +1,528 @@
+{
+  "info": {
+    "name": "Tella Auth API",
+    "description": "Documentação completa das rotas de autenticação do backend Tella",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:3000/api/v1"
+  },
+  "environments": {
+    "development": {
+      "baseUrl": "http://localhost:3000/api/v1",
+      "description": "Ambiente de desenvolvimento local"
+    },
+    "production": {
+      "baseUrl": "https://api.tella.com/api/v1",
+      "description": "Ambiente de produção"
+    }
+  },
+  "routes": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "endpoint": "/health",
+      "description": "Verifica se o servidor está funcionando",
+      "headers": {},
+      "payload": null,
+      "responses": {
+        "200": {
+          "description": "Servidor funcionando",
+          "example": {
+            "status": "OK",
+            "message": "Tella Backend is running",
+            "timestamp": "2025-01-31T10:30:00.000Z",
+            "environment": "development"
+          }
+        }
+      }
+    },
+    {
+      "name": "Firebase Login",
+      "method": "POST",
+      "endpoint": "/auth/firebase-login",
+      "description": "Autentica usuário com token do Firebase (Google, Facebook, Apple)",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "payload": {
+        "schema": {
+          "idToken": {
+            "type": "string",
+            "required": true,
+            "description": "Token ID retornado pelo Firebase Auth após login social"
+          }
+        },
+        "example": {
+          "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyN..."
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Login realizado com sucesso",
+          "scenarios": {
+            "new_user_needs_registration": {
+              "description": "Novo usuário que precisa completar registro",
+              "example": {
+                "success": true,
+                "message": "Login realizado com sucesso",
+                "data": {
+                  "user": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "nome": "João Silva",
+                    "email": "joao@gmail.com",
+                    "url_avatar": "https://lh3.googleusercontent.com/a/default-user",
+                    "is_profile_complete": false
+                  },
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "needsProfileCompletion": true
+                }
+              }
+            },
+            "existing_user_complete_profile": {
+              "description": "Usuário existente com perfil completo",
+              "example": {
+                "success": true,
+                "message": "Login realizado com sucesso",
+                "data": {
+                  "user": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "nome": "João Silva",
+                    "email": "joao@gmail.com",
+                    "url_avatar": "https://lh3.googleusercontent.com/a/default-user",
+                    "is_profile_complete": true
+                  },
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "needsProfileCompletion": false
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Dados inválidos",
+          "example": {
+            "error": "Dados inválidos",
+            "details": [
+              {
+                "field": "idToken",
+                "message": "Token Firebase é obrigatório"
+              }
+            ]
+          }
+        },
+        "401": {
+          "description": "Token Firebase inválido",
+          "example": {
+            "error": "Token Firebase inválido: Firebase ID token has expired"
+          }
+        },
+        "500": {
+          "description": "Erro interno do servidor",
+          "example": {
+            "error": "Erro interno do servidor",
+            "message": "Algo deu errado"
+          }
+        }
+      }
+    },
+    {
+      "name": "Complete Registration",
+      "method": "POST",
+      "endpoint": "/auth/complete-registration",
+      "description": "Completa o registro do usuário com dados adicionais",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": {
+        "schema": {
+          "nome": {
+            "type": "string",
+            "required": true,
+            "min": 2,
+            "max": 100,
+            "description": "Nome completo do usuário"
+          },
+          "url_avatar": {
+            "type": "string",
+            "required": false,
+            "format": "url",
+            "description": "URL do avatar do usuário"
+          },
+          "gender": {
+            "type": "string",
+            "required": true,
+            "enum": ["masculino", "feminino", "nao_binario", "outro", "prefiro_nao_dizer"],
+            "description": "Gênero do usuário"
+          },
+          "idade": {
+            "type": "integer",
+            "required": true,
+            "min": 13,
+            "max": 120,
+            "description": "Idade do usuário"
+          },
+          "interesses": {
+            "type": "array",
+            "required": true,
+            "items": "string",
+            "min_items": 1,
+            "max_items": 20,
+            "description": "Lista de interesses/tags do usuário"
+          }
+        },
+        "example": {
+          "nome": "João Silva Santos",
+          "url_avatar": "https://example.com/avatar.jpg",
+          "gender": "masculino",
+          "idade": 25,
+          "interesses": ["fantasia", "romance", "aventura", "ficcao-cientifica"]
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Registro completado com sucesso",
+          "example": {
+            "success": true,
+            "message": "Registro completado com sucesso",
+            "data": {
+              "user": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "nome": "João Silva Santos",
+                "email": "joao@gmail.com",
+                "url_avatar": "https://example.com/avatar.jpg",
+                "gender": "masculino",
+                "idade": 25,
+                "interesses": ["fantasia", "romance", "aventura", "ficcao-cientifica"],
+                "is_profile_complete": true
+              },
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+          }
+        },
+        "400": {
+          "description": "Dados inválidos ou perfil já completado",
+          "examples": {
+            "validation_error": {
+              "error": "Dados inválidos",
+              "details": [
+                {
+                  "field": "idade",
+                  "message": "Idade mínima é 13 anos"
+                },
+                {
+                  "field": "interesses",
+                  "message": "Selecione pelo menos um interesse"
+                }
+              ]
+            },
+            "already_completed": {
+              "error": "Perfil já foi completado anteriormente"
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido ou não fornecido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Current User",
+      "method": "GET",
+      "endpoint": "/auth/me",
+      "description": "Obtém dados do usuário autenticado",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "responses": {
+        "200": {
+          "description": "Dados do usuário retornados com sucesso",
+          "scenarios": {
+            "complete_profile": {
+              "description": "Usuário com perfil completo",
+              "example": {
+                "success": true,
+                "data": {
+                  "user": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "nome": "João Silva Santos",
+                    "email": "joao@gmail.com",
+                    "url_avatar": "https://example.com/avatar.jpg",
+                    "gender": "masculino",
+                    "idade": 25,
+                    "interesses": ["fantasia", "romance", "aventura"],
+                    "is_profile_complete": true,
+                    "provider": "google",
+                    "last_login_at": "2025-01-31T10:30:00.000Z",
+                    "created_at": "2025-01-30T15:20:00.000Z"
+                  }
+                }
+              }
+            },
+            "incomplete_profile": {
+              "description": "Usuário com perfil incompleto",
+              "example": {
+                "success": true,
+                "data": {
+                  "user": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "nome": "João Silva",
+                    "email": "joao@gmail.com",
+                    "url_avatar": "https://lh3.googleusercontent.com/a/default",
+                    "gender": null,
+                    "idade": null,
+                    "interesses": [],
+                    "is_profile_complete": false,
+                    "provider": "google",
+                    "last_login_at": "2025-01-31T10:30:00.000Z",
+                    "created_at": "2025-01-31T10:25:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido, expirado ou usuário não encontrado",
+          "examples": {
+            "missing_token": {
+              "error": "Token de acesso requerido"
+            },
+            "invalid_token": {
+              "error": "Token inválido"
+            },
+            "expired_token": {
+              "error": "Token expirado"
+            },
+            "user_not_found": {
+              "error": "Token inválido ou usuário não encontrado"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Refresh Token",
+      "method": "POST",
+      "endpoint": "/auth/refresh-token",
+      "description": "Renova o token JWT do usuário",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "responses": {
+        "200": {
+          "description": "Token renovado com sucesso",
+          "example": {
+            "success": true,
+            "message": "Token renovado com sucesso",
+            "data": {
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.NEW_TOKEN..."
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido ou usuário não encontrado",
+          "example": {
+            "error": "Token inválido ou usuário não encontrado"
+          }
+        }
+      }
+    }
+  ],
+  "test_scenarios": {
+    "complete_flow_new_user": {
+      "description": "Fluxo completo: usuário novo fazendo primeiro login",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Firebase Login",
+          "method": "POST",
+          "endpoint": "/auth/firebase-login",
+          "payload": {
+            "idToken": "firebase_token_here"
+          },
+          "expected_result": "needsProfileCompletion: true"
+        },
+        {
+          "step": 2,
+          "action": "Complete Registration",
+          "method": "POST",
+          "endpoint": "/auth/complete-registration",
+          "headers": {
+            "Authorization": "Bearer {token_from_step_1}"
+          },
+          "payload": {
+            "nome": "João Silva Santos",
+            "gender": "masculino",
+            "idade": 25,
+            "interesses": ["fantasia", "romance"]
+          },
+          "expected_result": "is_profile_complete: true"
+        },
+        {
+          "step": 3,
+          "action": "Get User Data",
+          "method": "GET",
+          "endpoint": "/auth/me",
+          "headers": {
+            "Authorization": "Bearer {token_from_step_2}"
+          },
+          "expected_result": "Dados completos do usuário"
+        }
+      ]
+    },
+    "returning_user_flow": {
+      "description": "Usuário já cadastrado fazendo login",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Firebase Login",
+          "method": "POST",
+          "endpoint": "/auth/firebase-login",
+          "payload": {
+            "idToken": "firebase_token_here"
+          },
+          "expected_result": "needsProfileCompletion: false"
+        },
+        {
+          "step": 2,
+          "action": "Test Protected Route",
+          "method": "GET",
+          "endpoint": "/auth/me",
+          "headers": {
+            "Authorization": "Bearer {token_from_step_1}"
+          },
+          "expected_result": "Dados do usuário com perfil completo"
+        }
+      ]
+    }
+  },
+  "validation_rules": {
+    "nome": {
+      "min_length": 2,
+      "max_length": 100,
+      "required": true,
+      "examples": {
+        "valid": ["João Silva", "Maria Santos", "Alex"],
+        "invalid": ["A", "", "Nome muito longo com mais de cem caracteres que não deveria ser aceito pelo sistema"]
+      }
+    },
+    "gender": {
+      "allowed_values": ["masculino", "feminino", "nao_binario", "outro", "prefiro_nao_dizer"],
+      "required": true,
+      "examples": {
+        "valid": ["masculino", "feminino", "nao_binario"],
+        "invalid": ["male", "female", "masculino "]
+      }
+    },
+    "idade": {
+      "min": 13,
+      "max": 120,
+      "type": "integer",
+      "required": true,
+      "examples": {
+        "valid": [13, 25, 45, 120],
+        "invalid": [12, 121, "25", 25.5]
+      }
+    },
+    "interesses": {
+      "min_items": 1,
+      "max_items": 20,
+      "type": "array_of_strings",
+      "required": true,
+      "examples": {
+        "valid": [
+          ["fantasia"], 
+          ["romance", "aventura", "misterio"],
+          ["fantasia", "romance", "aventura", "misterio", "ficcao-cientifica"]
+        ],
+        "invalid": [
+          [],
+          ["fantasia", "romance", "aventura", "misterio", "ficcao-cientifica", "horror", "slice-of-life", "acao", "drama", "comedia", "thriller", "biografia", "historia", "filosofia", "psicologia", "tecnologia", "ciencia", "arte", "musica", "cinema", "literatura", "educacao"]
+        ]
+      }
+    },
+    "url_avatar": {
+      "format": "url",
+      "required": false,
+      "examples": {
+        "valid": [
+          "https://example.com/avatar.jpg",
+          "https://lh3.googleusercontent.com/a/default-user",
+          ""
+        ],
+        "invalid": [
+          "not-a-url",
+          "ftp://invalid-protocol.com/file.jpg"
+        ]
+      }
+    }
+  },
+  "common_errors": {
+    "400": {
+      "description": "Bad Request - Dados inválidos",
+      "common_causes": [
+        "Campo obrigatório não fornecido",
+        "Tipo de dado incorreto",
+        "Valor fora do range permitido",
+        "Formato inválido (ex: URL malformada)"
+      ]
+    },
+    "401": {
+      "description": "Unauthorized - Problemas de autenticação",
+      "common_causes": [
+        "Token JWT não fornecido",
+        "Token JWT inválido ou malformado",
+        "Token JWT expirado",
+        "Usuário não existe mais",
+        "Token Firebase inválido"
+      ]
+    },
+    "500": {
+      "description": "Internal Server Error - Erro do servidor",
+      "common_causes": [
+        "Erro de conexão com banco de dados",
+        "Erro na validação do token Firebase",
+        "Configuração incorreta do ambiente"
+      ]
+    }
+  },
+  "environment_variables": {
+    "required": {
+      "NODE_ENV": "development ou production",
+      "PORT": "Porta do servidor (ex: 3000)",
+      "SUPABASE_URL": "URL do projeto Supabase",
+      "SUPABASE_SERVICE_KEY": "Service key do Supabase",
+      "FIREBASE_PROJECT_ID": "ID do projeto Firebase",
+      "FIREBASE_PRIVATE_KEY": "Chave privada do Firebase Admin",
+      "FIREBASE_CLIENT_EMAIL": "Email do service account Firebase",
+      "JWT_SECRET": "Chave secreta para JWT",
+      "JWT_EXPIRES_IN": "Tempo de expiração do JWT (ex: 7d)"
+    },
+    "optional": {
+      "ALLOWED_ORIGINS": "URLs permitidas para CORS"
+    }
+  },
+  "curl_examples": {
+    "firebase_login": {
+      "description": "Exemplo de login com Firebase",
+      "command": "curl -X POST http://localhost:3000/api/v1/auth/firebase-login \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"idToken\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyN...\"}'"
+    },
+    "complete_registration": {
+      "description": "Exemplo de completar registro",
+      "command": "curl -X POST http://localhost:3000/api/v1/auth/complete-registration \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\" \\\n  -d '{\n    \"nome\": \"João Silva Santos\",\n    \"gender\": \"masculino\",\n    \"idade\": 25,\n    \"interesses\": [\"fantasia\", \"romance\", \"aventura\"]\n  }'"
+    },
+    "get_current_user": {
+      "description": "Exemplo de obter dados do usuário",
+      "command": "curl -X GET http://localhost:3000/api/v1/auth/me \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+    },
+    "refresh_token": {
+      "description": "Exemplo de renovar token",
+      "command": "curl -X POST http://localhost:3000/api/v1/auth/refresh-token \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+    }
+  }
+}
