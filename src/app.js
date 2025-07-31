@@ -8,6 +8,8 @@ const { errorHandler } = require('./presentation/middlewares/error-middleware');
 
 // Routes
 const authRoutes = require('./presentation/routes/auth-routes');
+const walletRoutes = require('./presentation/routes/wallet-routes');
+const stripeRoutes = require('./presentation/routes/stripe-routes');
 
 const app = express();
 
@@ -23,7 +25,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Parser JSON
+// Parser JSON (exceto para webhooks do Stripe)
+app.use('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -39,6 +42,8 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/wallet', walletRoutes);
+app.use('/api/v1/stripe', stripeRoutes);
 
 // 404 Handler
 app.use('*', (req, res) => {

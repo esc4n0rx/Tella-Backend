@@ -1,9 +1,10 @@
 const { verifyFirebaseToken, getFirebaseUser } = require('../../config/firebase');
 const { generateToken } = require('../../config/jwt');
 const userRepository = require('../../infrastructure/repositories/user-repository');
+const walletService = require('./wallet-service');
 
 class AuthService {
-    async firebaseLogin(idToken) {
+    async firebaseLogin(idToken, ipAddress = null) {
         // Verifica e decodifica o token do Firebase
         const decodedToken = await verifyFirebaseToken(idToken);
         const firebaseUid = decodedToken.uid;
@@ -15,6 +16,11 @@ class AuthService {
         let tellaUser = await userRepository.findByFirebaseUid(firebaseUid);
 
         if (!tellaUser) {
+            // Verificar restrições de IP se fornecido
+            if (ipAddress) {
+                await walletService.checkIPRestrictions(ipAddress);
+            }
+
             // Extrai dados do usuário Firebase para criar registro
             const providerData = firebaseUser.providerData[0] || {};
             
@@ -25,13 +31,18 @@ class AuthService {
                 url_avatar: firebaseUser.photoURL || decodedToken.picture || null,
                 provider: providerData.providerId || 'firebase',
                 is_profile_complete: false,
-                last_login_at: new Date().toISOString()
+                registration_ip: ipAddress,
+                last_login_at: new Date().toISOString(),
+                last_login_ip: ipAddress
             };
 
             tellaUser = await userRepository.create(userData);
+            
+            // Criar wallet com 150 moedas iniciais
+            await walletService.getOrCreateWallet(tellaUser.id);
         } else {
-            // Atualiza último login
-            await userRepository.updateLastLogin(firebaseUid);
+            // Atualizar último login e IP
+            await userRepository.updateLastLogin(firebaseUid, ipAddress);
         }
 
         // Gera token JWT interno

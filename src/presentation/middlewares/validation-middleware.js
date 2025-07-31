@@ -1,7 +1,22 @@
-const validate = (schema) => {
+const validate = (schema, source = 'body') => {
     return (req, res, next) => {
         try {
-            const validatedData = schema.parse(req.body);
+            let dataToValidate;
+            
+            switch (source) {
+                case 'query':
+                    dataToValidate = req.query;
+                    break;
+                case 'params':
+                    dataToValidate = req.params;
+                    break;
+                case 'body':
+                default:
+                    dataToValidate = req.body;
+                    break;
+            }
+
+            const validatedData = schema.parse(dataToValidate);
             req.validatedData = validatedData;
             next();
         } catch (error) {

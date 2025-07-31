@@ -65,13 +65,19 @@ class UserRepository {
         return data;
     }
 
-    async updateLastLogin(firebaseUid) {
+    async updateLastLogin(firebaseUid, ipAddress = null) {
+        const updateData = {
+            last_login_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        if (ipAddress) {
+            updateData.last_login_ip = ipAddress;
+        }
+
         const { error } = await supabaseAdmin
             .from('tella_users')
-            .update({
-                last_login_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('firebase_uid', firebaseUid)
             .eq('is_deleted', false);
 

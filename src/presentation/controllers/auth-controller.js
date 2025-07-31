@@ -4,8 +4,9 @@ class AuthController {
     async firebaseLogin(req, res, next) {
         try {
             const { idToken } = req.validatedData;
+            const ipAddress = req.clientIP;
 
-            const result = await authService.firebaseLogin(idToken);
+            const result = await authService.firebaseLogin(idToken, ipAddress);
 
             res.status(200).json({
                 success: true,

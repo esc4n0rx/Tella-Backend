@@ -1,0 +1,1052 @@
+{
+  "info": {
+    "name": "Tella Wallet API",
+    "description": "Documentação completa das rotas de wallet e pagamentos do backend Tella",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:3000/api/v1"
+  },
+  "environments": {
+    "development": {
+      "baseUrl": "http://localhost:3000/api/v1",
+      "description": "Ambiente de desenvolvimento local"
+    },
+    "production": {
+      "baseUrl": "https://api.tella.com/api/v1",
+      "description": "Ambiente de produção"
+    }
+  },
+  "routes": [
+    {
+      "name": "Get Wallet Balance",
+      "method": "GET",
+      "endpoint": "/wallet/balance",
+      "description": "Consulta o saldo atual de Tella Coins do usuário",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "responses": {
+        "200": {
+          "description": "Saldo retornado com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "balance": 1250,
+              "total_earned": 1400,
+              "total_spent": 150
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido ou não fornecido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Spend Coins",
+      "method": "POST",
+      "endpoint": "/wallet/spend",
+      "description": "Gasta Tella Coins do saldo do usuário com validação atômica",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": {
+        "schema": {
+          "amount": {
+            "type": "integer",
+            "required": true,
+            "min": 1,
+            "max": 10000,
+            "description": "Quantidade de moedas a serem gastas"
+          },
+          "description": {
+            "type": "string",
+            "required": true,
+            "min": 1,
+            "max": 255,
+            "description": "Descrição do gasto"
+          },
+          "reference_id": {
+            "type": "string",
+            "required": false,
+            "max": 255,
+            "description": "ID de referência externa (opcional)"
+          },
+          "reference_type": {
+            "type": "string",
+            "required": false,
+            "max": 50,
+            "description": "Tipo da referência (ex: character_creation, message_generation)"
+          }
+        },
+        "examples": {
+          "character_creation": {
+            "amount": 50,
+            "description": "Criação de personagem personalizado",
+            "reference_type": "character_creation"
+          },
+          "message_generation": {
+            "amount": 5,
+            "description": "Geração de mensagem IA premium",
+            "reference_id": "msg_12345",
+            "reference_type": "message_generation"
+          },
+          "simple_spend": {
+            "amount": 10,
+            "description": "Uso de feature premium"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Moedas gastas com sucesso",
+          "example": {
+            "success": true,
+            "message": "Moedas gastas com sucesso",
+            "data": {
+              "transaction_id": "550e8400-e29b-41d4-a716-446655440000",
+              "balance_before": 1250,
+              "balance_after": 1200,
+              "amount_spent": 50
+            }
+          }
+        },
+        "400": {
+          "description": "Saldo insuficiente ou dados inválidos",
+          "examples": {
+            "insufficient_balance": {
+              "error": "Saldo insuficiente",
+              "message": "Você não possui moedas suficientes para esta transação"
+            },
+            "validation_error": {
+              "error": "Dados inválidos",
+              "details": [
+                {
+                  "field": "amount",
+                  "message": "Quantidade deve ser maior que zero"
+                }
+              ]
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Transaction History",
+      "method": "GET",
+      "endpoint": "/wallet/transactions",
+      "description": "Obtém o histórico de transações do usuário com paginação",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de itens por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Histórico retornado com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "transactions": [
+                {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "type": "spend",
+                  "amount": 50,
+                  "balance_before": 1250,
+                  "balance_after": 1200,
+                  "description": "Criação de personagem personalizado",
+                  "reference_id": null,
+                  "reference_type": "character_creation",
+                  "created_at": "2025-01-31T15:30:00.000Z"
+                },
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "type": "earn",
+                  "amount": 1200,
+                  "balance_before": 150,
+                  "balance_after": 1350,
+                  "description": "Compra de 1200 Tella Coins",
+                  "reference_id": "pi_1234567890",
+                  "reference_type": "stripe_payment",
+                  "created_at": "2025-01-31T14:20:00.000Z"
+                },
+                {
+                  "id": "770e8400-e29b-41d4-a716-446655440002",
+                  "type": "bonus",
+                  "amount": 150,
+                  "balance_before": 0,
+                  "balance_after": 150,
+                  "description": "Bônus de registro - 150 Tella Coins gratuitos",
+                  "reference_id": null,
+                  "reference_type": "registration_bonus",
+                  "created_at": "2025-01-30T10:15:00.000Z"
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Available Packages",
+      "method": "GET",
+      "endpoint": "/wallet/packages",
+      "description": "Lista todos os pacotes de Tella Coins disponíveis para compra",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "responses": {
+        "200": {
+          "description": "Pacotes retornados com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "packages": [
+                {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Tella Avulso",
+                  "stripe_product_id": "prod_SmcHxntAqRX2lb",
+                  "stripe_price_id": "price_1Rr32xI5nlZeb0YlXmpNbssB",
+                  "coins_amount": 100,
+                  "price_brl": 1.40,
+                  "cost_per_100_coins": 1.40,
+                  "is_active": true
+                },
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "name": "Tella Padrão",
+                  "stripe_product_id": "prod_SmcEU5azLkF8ZM",
+                  "stripe_price_id": "price_1Rr2zyI5nlZeb0Yl8RcveyHB",
+                  "coins_amount": 1200,
+                  "price_brl": 19.90,
+                  "cost_per_100_coins": 1.16,
+                  "is_active": true
+                },
+                {
+                  "id": "770e8400-e29b-41d4-a716-446655440002",
+                  "name": "Tella Creators",
+                  "stripe_product_id": "prod_SmcFSPIwJc7RAb",
+                  "stripe_price_id": "price_1Rr30YI5nlZeb0Ylus8AKq5c",
+                  "coins_amount": 3500,
+                  "price_brl": 49.90,
+                  "cost_per_100_coins": 1.00,
+                  "is_active": true
+                },
+                {
+                  "id": "880e8400-e29b-41d4-a716-446655440003",
+                  "name": "Tella Roleplayer+",
+                  "stripe_product_id": "prod_SmcFavNHcDebBg",
+                  "stripe_price_id": "price_1Rr316I5nlZeb0YlTusCyXmQ",
+                  "coins_amount": 8000,
+                  "price_brl": 99.90,
+                  "cost_per_100_coins": 0.87,
+                  "is_active": true
+                }
+              ]
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Create Payment Session",
+      "method": "POST",
+      "endpoint": "/stripe/create-payment-session",
+      "description": "Cria uma sessão de pagamento no Stripe para compra de Tella Coins",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": {
+        "schema": {
+          "package_id": {
+            "type": "string",
+            "required": true,
+            "format": "uuid",
+            "description": "ID do pacote de moedas a ser comprado"
+          },
+          "success_url": {
+            "type": "string",
+            "required": true,
+            "format": "url",
+            "description": "URL de redirecionamento após pagamento bem-sucedido"
+          },
+          "cancel_url": {
+            "type": "string",
+            "required": true,
+            "format": "url",
+            "description": "URL de redirecionamento após cancelamento"
+          }
+        },
+        "example": {
+          "package_id": "660e8400-e29b-41d4-a716-446655440001",
+          "success_url": "https://app.tella.com/payment/success?session_id={CHECKOUT_SESSION_ID}",
+          "cancel_url": "https://app.tella.com/payment/cancel"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Sessão de pagamento criada com sucesso",
+          "example": {
+            "success": true,
+            "message": "Sessão de pagamento criada com sucesso",
+            "data": {
+              "session_id": "cs_test_1234567890abcdef",
+              "session_url": "https://checkout.stripe.com/c/pay/cs_test_1234567890abcdef",
+              "package": {
+                "id": "660e8400-e29b-41d4-a716-446655440001",
+                "name": "Tella Padrão",
+                "coins_amount": 1200,
+                "price_brl": 19.90
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Dados inválidos ou pacote não encontrado",
+          "examples": {
+            "invalid_package": {
+              "error": "Pacote não encontrado"
+            },
+            "validation_error": {
+              "error": "Dados inválidos",
+              "details": [
+                {
+                  "field": "package_id",
+                  "message": "Package ID deve ser um UUID válido"
+                }
+              ]
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Stripe Webhook",
+      "method": "POST",
+      "endpoint": "/stripe/webhook",
+      "description": "Endpoint para receber webhooks do Stripe (uso interno)",
+      "headers": {
+        "Content-Type": "application/json",
+        "stripe-signature": "t=1234567890,v1=signature_hash"
+      },
+      "payload": {
+        "schema": {
+          "type": "object",
+          "description": "Payload do evento Stripe (estrutura varia por tipo de evento)"
+        },
+        "examples": {
+          "payment_intent_succeeded": {
+            "id": "evt_1234567890",
+            "object": "event",
+            "api_version": "2020-08-27",
+            "created": 1677649865,
+            "data": {
+              "object": {
+                "id": "pi_1234567890",
+                "object": "payment_intent",
+                "status": "succeeded",
+                "amount": 1990,
+                "currency": "brl"
+              }
+            },
+            "type": "payment_intent.succeeded"
+          },
+          "payment_intent_payment_failed": {
+            "id": "evt_0987654321",
+            "object": "event",
+            "api_version": "2020-08-27",
+            "created": 1677649865,
+            "data": {
+              "object": {
+                "id": "pi_0987654321",
+                "object": "payment_intent",
+                "status": "requires_payment_method",
+                "last_payment_error": {
+                  "code": "card_declined",
+                  "message": "Your card was declined."
+                }
+              }
+            },
+            "type": "payment_intent.payment_failed"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Webhook processado com sucesso",
+          "example": {
+            "received": true
+          }
+        },
+        "400": {
+          "description": "Assinatura inválida",
+          "example": {
+            "error": "Invalid signature"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Purchase History",
+      "method": "GET",
+      "endpoint": "/stripe/purchase-history",
+      "description": "Obtém o histórico de compras via Stripe do usuário",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de itens por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Histórico de compras retornado com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "purchases": [
+                {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "stripe_payment_intent_id": "pi_1234567890",
+                  "stripe_session_id": "cs_test_1234567890abcdef",
+                  "status": "completed",
+                  "amount_paid_brl": 19.90,
+                  "coins_purchased": 1200,
+                  "completed_at": "2025-01-31T14:30:00.000Z",
+                  "created_at": "2025-01-31T14:25:00.000Z",
+                  "tella_coin_packages": {
+                    "name": "Tella Padrão",
+                    "coins_amount": 1200
+                  }
+                },
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "stripe_payment_intent_id": "pi_0987654321",
+                  "stripe_session_id": "cs_test_0987654321fedcba",
+                  "status": "failed",
+                  "amount_paid_brl": 49.90,
+                  "coins_purchased": 3500,
+                  "completed_at": null,
+                  "created_at": "2025-01-30T10:15:00.000Z",
+                  "tella_coin_packages": {
+                    "name": "Tella Creators",
+                    "coins_amount": 3500
+                  }
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Payment Status",
+      "method": "GET",
+      "endpoint": "/stripe/payment-status/{payment_intent_id}",
+      "description": "Consulta o status de um pagamento específico",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "path_parameters": {
+        "payment_intent_id": {
+          "type": "string",
+          "required": true,
+          "description": "ID do payment intent do Stripe"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Status do pagamento retornado com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "payment_intent_id": "pi_1234567890",
+              "status": "succeeded",
+              "amount": 1990,
+              "currency": "brl",
+              "purchase_status": "completed",
+              "coins_purchased": 1200
+            }
+          }
+        },
+        "404": {
+          "description": "Pagamento não encontrado",
+          "example": {
+            "error": "Pagamento não encontrado"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    }
+  ],
+  "transaction_types": {
+    "earn": {
+      "description": "Moedas recebidas (compra, bônus, etc.)",
+      "examples": ["Compra via Stripe", "Bônus de registro", "Recompensa por atividade"]
+    },
+    "spend": {
+      "description": "Moedas gastas em features",
+      "examples": ["Criação de personagem", "Geração de mensagem IA", "Funcionalidade premium"]
+    },
+    "purchase": {
+      "description": "Compra via Stripe processada",
+      "examples": ["Compra de pacote de moedas"]
+    },
+    "refund": {
+      "description": "Reembolso de compra",
+      "examples": ["Estorno de pagamento"]
+    },
+    "bonus": {
+      "description": "Bônus gratuito",
+      "examples": ["150 moedas de boas-vindas", "Promoção especial"]
+    }
+  },
+  "test_scenarios": {
+    "complete_purchase_flow": {
+      "description": "Fluxo completo de compra de moedas",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Listar pacotes disponíveis",
+          "method": "GET",
+          "endpoint": "/wallet/packages",
+          "expected_result": "Lista de pacotes com IDs e preços"
+        },
+        {
+          "step": 2,
+          "action": "Criar sessão de pagamento",
+          "method": "POST",
+          "endpoint": "/stripe/create-payment-session",
+          "payload": {
+            "package_id": "660e8400-e29b-41d4-a716-446655440001",
+            "success_url": "https://app.tella.com/success",
+            "cancel_url": "https://app.tella.com/cancel"
+          },
+          "expected_result": "URL do checkout do Stripe"
+        },
+        {
+          "step": 3,
+          "action": "Usuário completa pagamento no Stripe",
+          "description": "Processo externo no checkout do Stripe"
+        },
+        {
+          "step": 4,
+          "action": "Webhook processa pagamento",
+          "method": "POST",
+          "endpoint": "/stripe/webhook",
+          "description": "Stripe envia webhook automaticamente",
+          "expected_result": "Moedas adicionadas ao saldo do usuário"
+        },
+        {
+          "step": 5,
+          "action": "Verificar novo saldo",
+          "method": "GET",
+          "endpoint": "/wallet/balance",
+          "expected_result": "Saldo atualizado com as novas moedas"
+        }
+      ]
+    },
+    "spend_coins_flow": {
+      "description": "Fluxo de gasto de moedas",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Verificar saldo atual",
+          "method": "GET",
+          "endpoint": "/wallet/balance",
+          "expected_result": "Saldo suficiente para o gasto"
+        },
+        {
+          "step": 2,
+          "action": "Gastar moedas",
+          "method": "POST",
+          "endpoint": "/wallet/spend",
+          "payload": {
+            "amount": 50,
+            "description": "Criação de personagem",
+            "reference_type": "character_creation"
+          },
+          "expected_result": "Transação processada, saldo reduzido"
+        },
+        {
+          "step": 3,
+          "action": "Verificar histórico",
+          "method": "GET",
+          "endpoint": "/wallet/transactions",
+          "expected_result": "Nova transação de tipo 'spend' no histórico"
+        }
+      ]
+    },
+    "insufficient_balance_flow": {
+      "description": "Tentativa de gasto com saldo insuficiente",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Verificar saldo atual",
+          "method": "GET",
+          "endpoint": "/wallet/balance",
+          "expected_result": "Saldo menor que a quantia a ser gasta"
+        },
+        {
+          "step": 2,
+          "action": "Tentar gastar mais do que possui",
+          "method": "POST",
+          "endpoint": "/wallet/spend",
+          "payload": {
+            "amount": 99999,
+            "description": "Tentativa de gasto excessivo"
+          },
+          "expected_result": "Erro 400 - Saldo insuficiente"
+        }
+      ]
+    }
+  },
+  "validation_rules": {
+    "spend_amount": {
+      "min": 1,
+      "max": 10000,
+      "type": "integer",
+      "examples": {
+        "valid": [1, 50, 100, 1000, 10000],
+        "invalid": [0, -1, 10001, 1.5, "50"]
+      }
+    },
+    "description": {
+      "min_length": 1,
+      "max_length": 255,
+      "required": true,
+      "examples": {
+        "valid": ["Criação de personagem", "Mensagem IA premium", "Feature X"],
+        "invalid": ["", null, "A"]
+      }
+    },
+    "package_id": {
+      "format": "uuid",
+      "required": true,
+      "examples": {
+        "valid": ["550e8400-e29b-41d4-a716-446655440000"],
+        "invalid": ["123", "invalid-uuid", null]
+      }
+    },
+    "success_url": {
+      "format": "url",
+      "required": true,
+      "examples": {
+        "valid": ["https://app.tella.com/success", "https://localhost:3000/success"],
+        "invalid": ["not-a-url", "ftp://invalid.com", ""]
+      }
+    },
+    "pagination": {
+      "page": {
+        "min": 1,
+        "type": "integer",
+        "default": 1
+      },
+      "limit": {
+        "min": 1,
+        "max": 100,
+        "type": "integer",
+        "default": 20
+      }
+    }
+  },
+  "error_codes": {
+    "400": {
+      "description": "Bad Request",
+      "common_causes": [
+        "Saldo insuficiente",
+        "Dados de entrada inválidos",
+        "Pacote não encontrado",
+        "Valores fora do range permitido"
+      ]
+    },
+    "401": {
+      "description": "Unauthorized",
+      "common_causes": [
+        "Token JWT não fornecido",
+        "Token JWT inválido ou expirado",
+        "Usuário não autenticado"
+      ]
+    },
+    "404": {
+      "description": "Not Found",
+      "common_causes": [
+        "Pagamento não encontrado",
+        "Transação não existe",
+        "Endpoint não encontrado"
+      ]
+    },
+    "500": {
+      "description": "Internal Server Error",
+      "common_causes": [
+        "Erro na comunicação com Stripe",
+        "Erro no banco de dados",
+        "Falha no processamento do webhook"
+      ]
+    }
+  },
+  "webhook_events": {
+    "supported_events": [
+      {
+        "event": "payment_intent.succeeded",
+        "description": "Pagamento bem-sucedido - adiciona moedas ao usuário",
+        "action": "Credita moedas no saldo do usuário"
+      },
+      {
+        "event": "payment_intent.payment_failed",
+        "description": "Falha no pagamento - marca compra como falhada",
+        "action": "Atualiza status da compra para 'failed'"
+      },
+      {
+        "event": "payment_intent.created",
+        "description": "Payment intent criado - apenas log",
+        "action": "Log informativo"
+      },
+      {
+        "event": "payment_intent.canceled",
+        "description": "Pagamento cancelado",
+        "action": "Marca compra como 'canceled'"
+      },
+      {
+        "event": "checkout.session.completed",
+        "description": "Sessão de checkout finalizada - log informativo",
+        "action": "Log informativo"
+      },
+      {
+        "event": "checkout.session.expired",
+        "description": "Sessão de checkout expirada - log informativo",
+        "action": "Log informativo"
+      }
+    ]
+  },
+  "curl_examples": {
+    "get_balance": {
+      "description": "Consultar saldo atual",
+      "command": "curl -X GET http://localhost:3000/api/v1/wallet/balance \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+    },
+    "spend_coins": {
+      "description": "Gastar 50 moedas para criação de personagem",
+      "command": "curl -X POST http://localhost:3000/api/v1/wallet/spend \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\" \\\n  -d '{\n    \"amount\": 50,\n    \"description\": \"Criação de personagem personalizado\",\n    \"reference_type\": \"character_creation\"\n  }'"
+    },
+    "get_transactions": {
+      "description": "Obter histórico de transações (página 1, 10 itens)",
+      "command": "curl -X GET \"http://localhost:3000/api/v1/wallet/transactions?page=1&limit=10\" \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+    },
+    "get_packages": {
+      "description": "Listar pacotes disponíveis",
+      "command": "curl -X GET http://localhost:3000/api/v1/wallet/packages \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+    },
+    "create_payment_session": {
+      "description": "Criar sessão de pagamento para pacote Padrão",
+      "command": "curl -X POST http://localhost:3000/api/v1/stripe/create-payment-session \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\" \\\n  -d '{\n    \"package_id\": \"660e8400-e29b-41d4-a716-446655440001\",\n    \"success_url\": \"https://app.tella.com/payment/success\",\n    \"cancel_url\": \"https://app.tella.com/payment/cancel\"\n  }'"
+    },
+    "get_purchase_history": {
+     "description": "Obter histórico de compras",
+     "command": "curl -X GET \"http://localhost:3000/api/v1/stripe/purchase-history?page=1&limit=10\" \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+   },
+   "get_payment_status": {
+     "description": "Consultar status de um pagamento específico",
+     "command": "curl -X GET http://localhost:3000/api/v1/stripe/payment-status/pi_1234567890 \\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+   },
+   "webhook_test": {
+     "description": "Simular webhook do Stripe (apenas para testes)",
+     "command": "curl -X POST http://localhost:3000/api/v1/stripe/webhook \\\n  -H \"Content-Type: application/json\" \\\n  -H \"stripe-signature: t=1677649865,v1=test_signature\" \\\n  -d '{\n    \"id\": \"evt_test_webhook\",\n    \"object\": \"event\",\n    \"type\": \"payment_intent.succeeded\",\n    \"data\": {\n      \"object\": {\n        \"id\": \"pi_test_payment\",\n        \"status\": \"succeeded\"\n      }\n    }\n  }'"
+   }
+ },
+ "rate_limits": {
+   "wallet_operations": {
+     "spend_coins": "100 requests per minute per user",
+     "get_balance": "1000 requests per minute per user",
+     "get_transactions": "200 requests per minute per user"
+   },
+   "stripe_operations": {
+     "create_payment_session": "50 requests per minute per user",
+     "webhook": "No limit (controlled by Stripe)"
+   }
+ },
+ "security_considerations": {
+   "ip_tracking": {
+     "description": "Todas as transações registram o IP do usuário",
+     "purpose": "Prevenção de múltiplas contas e fraudes",
+     "implementation": "Middleware trackIP aplicado em todas as rotas"
+   },
+   "atomic_transactions": {
+     "description": "Gastos de moedas são processados atomicamente",
+     "purpose": "Evitar race conditions e inconsistências",
+     "implementation": "Função PostgreSQL spend_tella_coins com locks"
+   },
+   "webhook_verification": {
+     "description": "Webhooks do Stripe são verificados via signature",
+     "purpose": "Garantir que o webhook veio realmente do Stripe",
+     "implementation": "stripe.webhooks.constructEvent() com secret"
+   },
+   "balance_validation": {
+     "description": "Saldo nunca pode ficar negativo",
+     "purpose": "Integridade financeira",
+     "implementation": "Constraints no banco + validação no service"
+   }
+ },
+ "monitoring_and_logging": {
+   "transaction_logs": {
+     "description": "Todas as transações são logadas com detalhes completos",
+     "fields": ["user_id", "amount", "type", "description", "ip_address", "timestamp"]
+   },
+   "webhook_logs": {
+     "description": "Todos os webhooks são logados com status de processamento",
+     "events": ["received", "processed", "failed", "signature_invalid"]
+   },
+   "error_tracking": {
+     "description": "Erros financeiros são logados com alta prioridade",
+     "examples": ["insufficient_balance", "payment_processing_failed", "webhook_signature_invalid"]
+   }
+ },
+ "business_rules": {
+   "initial_bonus": {
+     "description": "Novos usuários recebem 150 Tella Coins gratuitos",
+     "trigger": "Primeiro login/registro",
+     "implementation": "walletService.getOrCreateWallet()"
+   },
+   "minimum_spend": {
+     "description": "Gasto mínimo é de 1 moeda",
+     "validation": "Zod schema + database constraint"
+   },
+   "maximum_spend": {
+     "description": "Gasto máximo é de 10,000 moedas por transação",
+     "purpose": "Prevenção de gastos acidentais ou maliciosos"
+   },
+   "package_pricing": {
+     "description": "Preços dos pacotes seguem escala progressiva",
+     "structure": [
+       "Avulso: R$ 1,40 por 100 coins (R$ 1,40/100)",
+       "Padrão: R$ 19,90 por 1,200 coins (R$ 1,16/100)",
+       "Creators: R$ 49,90 por 3,500 coins (R$ 1,00/100)",
+       "Roleplayer+: R$ 99,90 por 8,000 coins (R$ 0,87/100)"
+     ]
+   },
+   "refund_policy": {
+     "description": "Reembolsos são processados via webhook do Stripe",
+     "implementation": "Evento payment_intent.refunded (a ser implementado se necessário)"
+   }
+ },
+ "integration_checklist": {
+   "frontend_integration": [
+     "Implementar tela de wallet/saldo",
+     "Integrar checkout do Stripe",
+     "Mostrar histórico de transações",
+     "Feedback visual para gastos de moedas",
+     "Tratamento de erros de saldo insuficiente"
+   ],
+   "backend_configuration": [
+     "Configurar webhook no painel do Stripe",
+     "Definir variáveis de ambiente (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET)",
+     "Executar migrações SQL",
+     "Configurar monitoramento de logs",
+     "Testar fluxo completo de pagamento"
+   ],
+   "testing_scenarios": [
+     "Teste de pagamento bem-sucedido",
+     "Teste de pagamento falhado",
+     "Teste de saldo insuficiente",
+     "Teste de webhook duplicado",
+     "Teste de signature inválida no webhook",
+     "Teste de múltiplas transações simultâneas"
+   ]
+ },
+ "common_integration_patterns": {
+   "character_creation": {
+     "cost": "50 Tella Coins",
+     "implementation": {
+       "step1": "Verificar saldo >= 50",
+       "step2": "Criar personagem",
+       "step3": "Debitar 50 moedas com reference_type: 'character_creation'"
+     }
+   },
+   "ai_message_generation": {
+     "cost": "5 Tella Coins por mensagem",
+     "implementation": {
+       "step1": "Verificar saldo >= 5",
+       "step2": "Gerar mensagem IA",
+       "step3": "Debitar 5 moedas com reference_type: 'message_generation'"
+     }
+   },
+   "premium_features": {
+     "cost": "Variável por feature",
+     "implementation": {
+       "step1": "Verificar saldo >= custo_da_feature",
+       "step2": "Executar feature premium",
+       "step3": "Debitar moedas com reference_type específico"
+     }
+   }
+ },
+ "performance_considerations": {
+   "database_indexes": {
+     "description": "Índices otimizados para consultas frequentes",
+     "key_indexes": [
+       "idx_tella_wallets_user_id",
+       "idx_tella_transactions_user_id",
+       "idx_tella_transactions_created_at",
+       "idx_tella_stripe_purchases_payment_intent"
+     ]
+   },
+   "caching_strategy": {
+     "balance_caching": "Cache de saldo por 30 segundos (opcional)",
+     "package_caching": "Cache de pacotes por 1 hora",
+     "transaction_history": "Paginação para evitar sobrecarga"
+   },
+   "concurrent_transactions": {
+     "description": "Função spend_tella_coins usa locks para evitar race conditions",
+     "implementation": "SELECT ... FOR UPDATE no PostgreSQL"
+   }
+ },
+ "troubleshooting": {
+   "common_issues": {
+     "webhook_not_received": {
+       "symptoms": "Pagamento processado no Stripe mas moedas não creditadas",
+       "solutions": [
+         "Verificar se URL do webhook está correta",
+         "Verificar se STRIPE_WEBHOOK_SECRET está correto",
+         "Verificar logs do servidor para erros de webhook",
+         "Testar webhook manualmente com Stripe CLI"
+       ]
+     },
+     "insufficient_balance_error": {
+       "symptoms": "Erro 400 ao tentar gastar moedas",
+       "solutions": [
+         "Verificar saldo atual do usuário",
+         "Verificar se transação anterior foi processada",
+         "Verificar logs de transações recentes"
+       ]
+     },
+     "payment_session_creation_failed": {
+       "symptoms": "Erro ao criar sessão de pagamento",
+       "solutions": [
+         "Verificar se STRIPE_SECRET_KEY está correto",
+         "Verificar se package_id existe e está ativo",
+         "Verificar se URLs de success/cancel são válidas"
+       ]
+     },
+     "duplicate_transactions": {
+       "symptoms": "Mesmo gasto processado múltiplas vezes",
+       "solutions": [
+         "Verificar implementação de idempotência no frontend",
+         "Verificar logs de transações duplicadas",
+         "Implementar rate limiting se necessário"
+       ]
+     }
+   },
+   "debugging_tools": {
+     "stripe_cli": "stripe listen --forward-to localhost:3000/api/v1/stripe/webhook",
+     "webhook_testing": "stripe trigger payment_intent.succeeded",
+     "database_queries": [
+       "SELECT * FROM tella_wallets WHERE user_id = 'USER_ID';",
+       "SELECT * FROM tella_transactions WHERE user_id = 'USER_ID' ORDER BY created_at DESC LIMIT 10;",
+       "SELECT * FROM tella_stripe_purchases WHERE user_id = 'USER_ID' ORDER BY created_at DESC;"
+     ]
+   }
+ },
+ "future_enhancements": {
+   "potential_features": [
+     "Sistema de cashback para compras recorrentes",
+     "Promoções e descontos por tempo limitado",
+     "Sistema de assinatura mensal",
+     "Transferência de moedas entre usuários",
+     "Sistema de recompensas por atividade",
+     "Analytics de gastos por usuário",
+     "Alertas de saldo baixo",
+     "Histórico de reembolsos",
+     "Sistema de créditos promocionais"
+   ],
+   "technical_improvements": [
+     "Cache Redis para saldos",
+     "Queue system para processamento de webhooks",
+     "Metrics e dashboards de transações",
+     "Backup automático de dados financeiros",
+     "Auditoria completa de transações",
+     "Rate limiting avançado",
+     "Geolocalização por IP",
+     "Detecção de fraudes automatizada"
+   ]
+ }
+}
