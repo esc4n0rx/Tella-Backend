@@ -14,10 +14,9 @@ const requireAuth = async (req, res, next) => {
         const token = authHeader.substring(7);
         const decoded = verifyToken(token);
         
-        // Verifica se o usuário ainda existe e está ativo
         const { data: user, error } = await supabaseAdmin
             .from('tella_users')
-            .select('id, firebase_uid, nome, email, is_deleted')
+            .select('id, firebase_uid, nome, email, role, is_deleted')
             .eq('firebase_uid', decoded.firebase_uid)
             .eq('is_deleted', false)
             .single();

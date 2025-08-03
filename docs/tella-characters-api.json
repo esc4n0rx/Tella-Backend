@@ -1,0 +1,1380 @@
+{
+  "info": {
+    "name": "Tella Characters API",
+    "description": "Documentação completa das rotas de criação e gerenciamento de personagens do backend Tella",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:3000/api/v1"
+  },
+  "environments": {
+    "development": {
+      "baseUrl": "http://localhost:3000/api/v1",
+      "description": "Ambiente de desenvolvimento local"
+    },
+    "production": {
+      "baseUrl": "https://api.tella.com/api/v1",
+      "description": "Ambiente de produção"
+    }
+  },
+  "user_roles": {
+    "user": {
+      "description": "Usuário comum",
+      "permissions": [
+        "Visualizar personagens públicos",
+        "Comprar personagens",
+        "Favoritar personagens",
+        "Ver próprias compras e favoritos"
+      ]
+    },
+    "creator": {
+      "description": "Criador de conteúdo",
+      "permissions": [
+        "Todas as permissões de 'user'",
+        "Criar personagens (pagando 50 TellaCoins)",
+        "Ver próprios personagens criados",
+        "Definir preço de venda (0-1000 TellaCoins)"
+      ],
+      "creation_cost": "50 TellaCoins por personagem",
+      "approval_required": true
+    },
+    "staff": {
+      "description": "Administrador do sistema",
+      "permissions": [
+        "Todas as permissões de 'creator'",
+        "Criar personagens gratuitamente",
+        "Aprovar/rejeitar personagens de creators",
+        "Criar personagens já aprovados automaticamente"
+      ],
+      "creation_cost": "Gratuito",
+      "approval_required": false
+    }
+  },
+  "routes": [
+    {
+      "name": "List Public Characters",
+      "method": "GET",
+      "endpoint": "/characters",
+      "description": "Lista personagens públicos e aprovados disponíveis para todos os usuários",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de personagens por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Lista de personagens retornada com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "characters": [
+                {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Elara Nightwhisper",
+                  "gender": "feminino",
+                  "style": "Misteriosa e elegante",
+                  "base_narrative": "Uma elfa mística que domina magias antigas e guarda segredos do passado",
+                  "roleplay_style": "Fala de forma enigmática e poética, sempre mantendo um ar de mistério",
+                  "initial_phrases": ["As estrelas sussurram segredos esta noite...", "Posso sentir a magia fluindo através de você..."],
+                  "avatar_url": "https://example.com/elara-avatar.jpg",
+                  "observations": "Evita falar sobre seu passado sombrio",
+                  "negative_words": ["violência", "morte"],
+                  "price": 100,
+                  "is_public": true,
+                  "is_approved": true,
+                  "is_default": false,
+                  "created_at": "2025-01-31T15:30:00.000Z",
+                  "creator": {
+                    "id": "660e8400-e29b-41d4-a716-446655440001",
+                    "nome": "João Creator",
+                    "url_avatar": "https://example.com/joao-avatar.jpg"
+                  }
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido ou não fornecido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Character Details",
+      "method": "GET",
+      "endpoint": "/characters/{id}",
+      "description": "Obtém detalhes completos de um personagem específico",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "path_parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "format": "uuid",
+          "description": "ID do personagem"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Detalhes do personagem retornados com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "character": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "name": "Elara Nightwhisper",
+                "gender": "feminino",
+                "style": "Misteriosa e elegante",
+                "base_narrative": "Uma elfa mística que domina magias antigas e guarda segredos do passado",
+                "roleplay_style": "Fala de forma enigmática e poética, sempre mantendo um ar de mistério",
+                "initial_phrases": ["As estrelas sussurram segredos esta noite...", "Posso sentir a magia fluindo através de você..."],
+                "avatar_url": "https://example.com/elara-avatar.jpg",
+                "observations": "Evita falar sobre seu passado sombrio",
+                "negative_words": ["violência", "morte"],
+                "llm_prompt": "Você é Elara Nightwhisper, uma elfa mística de 300 anos que domina magias antigas...",
+                "price": 100,
+                "is_public": true,
+                "is_approved": true,
+                "is_default": false,
+                "created_at": "2025-01-31T15:30:00.000Z",
+                "updated_at": "2025-01-31T15:30:00.000Z",
+                "creator": {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "nome": "João Creator",
+                  "url_avatar": "https://example.com/joao-avatar.jpg"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Personagem não encontrado",
+          "example": {
+            "error": "Personagem não encontrado"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Create Character",
+      "method": "POST",
+      "endpoint": "/characters",
+      "description": "Cria um novo personagem (apenas creators e staff)",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": {
+        "schema": {
+          "name": {
+            "type": "string",
+            "required": true,
+            "min": 2,
+            "max": 100,
+            "description": "Nome do personagem"
+          },
+          "gender": {
+            "type": "string",
+            "required": true,
+            "enum": ["masculino", "feminino", "nao_binario", "outro"],
+            "description": "Gênero do personagem"
+          },
+          "style": {
+            "type": "string",
+            "required": true,
+            "min": 2,
+            "max": 100,
+            "description": "Estilo/aparência do personagem"
+          },
+          "baseNarrative": {
+            "type": "string",
+            "required": true,
+            "min": 10,
+            "max": 2000,
+            "description": "História e background do personagem"
+          },
+          "roleplayStyle": {
+            "type": "string",
+            "required": true,
+            "min": 10,
+            "max": 1000,
+            "description": "Como o personagem se comporta e fala"
+          },
+          "initialPhrases": {
+            "type": "array",
+            "required": true,
+            "items": "string",
+            "min_items": 1,
+            "max_items": 10,
+            "description": "Frases que o personagem pode usar para iniciar conversas"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "required": false,
+            "format": "url",
+            "description": "URL da imagem do avatar do personagem"
+          },
+          "observations": {
+            "type": "string",
+            "required": false,
+            "max": 1000,
+            "description": "Observações adicionais sobre o personagem"
+          },
+          "negativeWords": {
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "max_items": 20,
+            "description": "Palavras que o personagem deve evitar"
+          },
+          "price": {
+            "type": "integer",
+            "required": false,
+            "min": 0,
+            "max": 1000,
+            "default": 0,
+            "description": "Preço em TellaCoins para outros usuários comprarem"
+          }
+        },
+        "examples": {
+          "fantasy_character": {
+            "name": "Elara Nightwhisper",
+            "gender": "feminino",
+            "style": "Elfa mística com cabelos prateados e olhos violeta",
+            "baseNarrative": "Uma elfa de 300 anos que estudou nas bibliotecas antigas de Silverwood. Ela domina magias de ilusão e pode ver através do véu entre dimensões. Perdeu sua família em uma guerra há 50 anos e agora vaga pelo mundo em busca de conhecimento e redenção.",
+            "roleplayStyle": "Fala de forma eloquente e misteriosa, frequentemente fazendo referências a eventos antigos. Usa metáforas relacionadas à natureza e astronomia. É cautelosa com estranhos mas leal aos amigos.",
+            "initialPhrases": [
+              "As estrelas sussurram segredos esta noite...",
+              "Posso sentir a magia fluindo através de você...",
+              "Os ventos carregam ecos de tempos antigos..."
+            ],
+            "avatarUrl": "https://example.com/elara-avatar.jpg",
+            "observations": "Evita falar sobre a guerra que destruiu sua família. Tem uma fraqueza por doces élficos.",
+            "negativeWords": ["violência extrema", "morte brutal"],
+            "price": 150
+          },
+          "modern_character": {
+            "name": "Alex Chen",
+            "gender": "nao_binario",
+            "style": "Hacker cyberpunk com estética neon",
+            "baseNarrative": "Um hacker de 25 anos especializado em segurança digital. Vive em Neo Tokyo 2087, onde as corporações controlam tudo através da tecnologia. Alex luta pela liberdade digital e ajuda pessoas comuns contra a opressão corporativa.",
+            "roleplayStyle": "Usa gírias tech, fala rápido quando animado, faz muitas referências à cultura pop e jogos. É direto mas tem um coração bondoso.",
+            "initialPhrases": [
+              "Ei, seus dados estão seguros comigo.",
+              "Já hackeei sistemas piores que esse antes do café da manhã.",
+              "A Matrix não é ficção, é terça-feira."
+            ],
+            "avatarUrl": "https://example.com/alex-avatar.jpg",
+            "observations": "Viciado em energia drinks e pizza. Tem um gato robótico chamado Pixel.",
+            "negativeWords": ["corporações", "vigilância"],
+            "price": 100
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Personagem criado com sucesso",
+          "scenarios": {
+            "creator_success": {
+              "description": "Creator criou personagem (aguarda aprovação)",
+              "example": {
+                "success": true,
+                "message": "Personagem criado com sucesso. Aguardando aprovação.",
+                "data": {
+                  "character": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Elara Nightwhisper",
+                    "style": "Elfa mística com cabelos prateados e olhos violeta",
+                    "price": 150,
+                    "is_approved": false,
+                    "created_at": "2025-01-31T15:30:00.000Z"
+                  }
+                }
+              }
+            },
+            "staff_success": {
+              "description": "Staff criou personagem (aprovado automaticamente)",
+              "example": {
+                "success": true,
+                "message": "Personagem criado e aprovado com sucesso",
+                "data": {
+                  "character": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Gandalf the Grey",
+                    "style": "Mago sábio com barba longa",
+                    "price": 0,
+                    "is_approved": true,
+                    "created_at": "2025-01-31T15:30:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Dados inválidos ou regras de negócio violadas",
+          "examples": {
+            "validation_error": {
+              "error": "Dados inválidos",
+              "details": [
+                {
+                  "field": "name",
+                  "message": "Nome deve ter pelo menos 2 caracteres"
+                },
+                {
+                  "field": "price",
+                  "message": "Preço deve estar entre 0 e 1000 moedas"
+                }
+              ]
+            },
+            "insufficient_balance": {
+              "error": "Saldo insuficiente",
+              "message": "Você não possui moedas suficientes para criar um personagem"
+            },
+            "llm_error": {
+              "error": "Falha ao gerar prompt do personagem. Tente novamente."
+            }
+          }
+        },
+        "403": {
+          "description": "Permissão negada",
+          "example": {
+            "error": "Acesso negado",
+            "message": "Apenas creators e staff podem acessar esta funcionalidade"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Approve Character",
+      "method": "PATCH",
+      "endpoint": "/characters/{id}/approve",
+      "description": "Aprova ou rejeita um personagem (apenas staff)",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": {
+        "schema": {
+          "isApproved": {
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "description": "Se o personagem deve ser aprovado (true) ou rejeitado (false)"
+          }
+        },
+        "examples": {
+          "approve": {
+            "isApproved": true
+          },
+          "reject": {
+            "isApproved": false
+          }
+        }
+      },
+      "path_parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "format": "uuid",
+          "description": "ID do personagem"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Status de aprovação atualizado com sucesso",
+          "examples": {
+            "approved": {
+              "success": true,
+              "message": "Personagem aprovado com sucesso",
+              "data": {
+                "character": {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Elara Nightwhisper",
+                  "is_approved": true,
+                  "updated_at": "2025-01-31T16:00:00.000Z"
+                }
+              }
+            },
+            "rejected": {
+              "success": true,
+              "message": "Personagem rejeitado",
+              "data": {
+                "character": {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Inappropriate Character",
+                  "is_approved": false,
+                  "updated_at": "2025-01-31T16:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Personagem não encontrado",
+          "example": {
+            "error": "Personagem não encontrado"
+          }
+        },
+        "403": {
+          "description": "Permissão negada",
+          "example": {
+            "error": "Acesso negado",
+            "message": "Apenas staff podem acessar esta funcionalidade"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Purchase Character",
+      "method": "POST",
+      "endpoint": "/characters/{id}/purchase",
+      "description": "Compra um personagem com TellaCoins",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "path_parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "format": "uuid",
+          "description": "ID do personagem a ser comprado"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Personagem comprado com sucesso",
+          "example": {
+            "success": true,
+            "message": "Personagem comprado com sucesso",
+            "data": {
+              "purchase": {
+                "id": "770e8400-e29b-41d4-a716-446655440002",
+                "user_id": "880e8400-e29b-41d4-a716-446655440003",
+                "character_id": "550e8400-e29b-41d4-a716-446655440000",
+                "price_paid": 150,
+                "transaction_id": "990e8400-e29b-41d4-a716-446655440004",
+                "purchased_at": "2025-01-31T16:30:00.000Z"
+              },
+              "character": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "name": "Elara Nightwhisper",
+                "style": "Elfa mística com cabelos prateados",
+                "price": 150
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Erro na compra",
+          "examples": {
+            "already_owned": {
+              "error": "Você já possui este personagem"
+            },
+            "own_character": {
+              "error": "Você não pode comprar seu próprio personagem"
+            },
+            "not_available": {
+              "error": "Personagem não está disponível para compra"
+            },
+            "insufficient_balance": {
+              "error": "Saldo insuficiente",
+              "message": "Você não possui moedas suficientes para comprar este personagem"
+            }
+          }
+        },
+        "404": {
+          "description": "Personagem não encontrado",
+          "example": {
+            "error": "Personagem não encontrado"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Toggle Favorite",
+      "method": "POST",
+      "endpoint": "/characters/{id}/favorite",
+      "description": "Adiciona ou remove um personagem dos favoritos",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "path_parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "format": "uuid",
+          "description": "ID do personagem"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Status de favorito alterado com sucesso",
+          "examples": {
+            "added": {
+              "success": true,
+              "message": "Personagem adicionado aos favoritos",
+              "data": {
+                "action": "added"
+              }
+            },
+            "removed": {
+              "success": true,
+              "message": "Personagem removido dos favoritos",
+              "data": {
+                "action": "removed"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Personagem não disponível",
+          "example": {
+            "error": "Personagem não está disponível"
+          }
+        },
+        "404": {
+          "description": "Personagem não encontrado",
+          "example": {
+            "error": "Personagem não encontrado"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get My Created Characters",
+      "method": "GET",
+      "endpoint": "/characters/user/created",
+      "description": "Lista personagens criados pelo usuário atual (creators e staff)",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de personagens por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Lista de personagens criados retornada com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "characters": [
+                {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Elara Nightwhisper",
+                  "gender": "feminino",
+                  "style": "Elfa mística com cabelos prateados",
+                  "price": 150,
+                  "is_public": true,
+                  "is_approved": true,
+                  "is_default": false,
+                  "created_at": "2025-01-31T15:30:00.000Z",
+                  "updated_at": "2025-01-31T16:00:00.000Z"
+                },
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "name": "Dark Assassin",
+                  "gender": "masculino",
+                  "style": "Ninja sombrio",
+                  "price": 200,
+                  "is_public": true,
+                  "is_approved": false,
+                  "is_default": false,
+                  "created_at": "2025-01-31T14:00:00.000Z",
+                  "updated_at": "2025-01-31T14:00:00.000Z"
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Permissão negada",
+          "example": {
+            "error": "Acesso negado",
+            "message": "Apenas creators e staff podem acessar esta funcionalidade"
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get My Purchased Characters",
+      "method": "GET",
+      "endpoint": "/characters/user/purchases",
+      "description": "Lista personagens comprados pelo usuário atual",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de compras por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Lista de personagens comprados retornada com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "purchases": [
+                {
+                  "id": "770e8400-e29b-41d4-a716-446655440002",
+                  "price_paid": 150,
+                  "purchased_at": "2025-01-31T16:30:00.000Z",
+                  "character": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Elara Nightwhisper",
+                    "avatar_url": "https://example.com/elara-avatar.jpg",
+                    "style": "Elfa mística com cabelos prateados",
+                    "creator": {
+                      "id": "660e8400-e29b-41d4-a716-446655440001",
+                      "nome": "João Creator"
+                    }
+                  }
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    },
+    {
+      "name": "Get My Favorite Characters",
+      "method": "GET",
+      "endpoint": "/characters/user/favorites",
+      "description": "Lista personagens favoritados pelo usuário atual",
+      "headers": {
+        "Authorization": "Bearer {jwt_token}"
+      },
+      "payload": null,
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "description": "Número da página"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Quantidade de favoritos por página"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Lista de personagens favoritos retornada com sucesso",
+          "example": {
+            "success": true,
+            "data": {
+              "favorites": [
+                {
+                  "id": "880e8400-e29b-41d4-a716-446655440003",
+                  "created_at": "2025-01-31T17:00:00.000Z",
+                  "character": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Elara Nightwhisper",
+                    "avatar_url": "https://example.com/elara-avatar.jpg",
+                    "style": "Elfa mística com cabelos prateados",
+                    "price": 150,
+                    "creator": {
+                      "id": "660e8400-e29b-41d4-a716-446655440001",
+                      "nome": "João Creator"
+                    }
+                  }
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "has_more": false
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Token inválido",
+          "example": {
+            "error": "Token de acesso requerido"
+          }
+        }
+      }
+    }
+  ],
+  "business_rules": {
+    "character_creation": {
+      "creator_cost": "50 TellaCoins por personagem criado",
+      "staff_cost": "Gratuito",
+      "approval_required": {
+        "creator": true,
+        "staff": false
+      },
+      "price_range": {
+        "min": 0,
+        "max": 1000,
+        "currency": "TellaCoins"
+      }
+    },
+    "character_purchase": {
+      "cannot_buy_own": true,
+      "cannot_buy_duplicate": true,
+      "requires_approval": true,
+      "requires_public": true,
+      "free_characters_allowed": true
+    },
+    "llm_integration": {
+      "provider": "Groq API",
+      "model": "llama-3.1-8b-instant",
+      "prompt_generation": "Automático baseado nos dados do usuário",
+      "fallback": "Se LLM falhar, usar dados do usuário como prompt"
+    },
+    "user_permissions": {
+      "view_public_characters": ["user", "creator", "staff"],
+      "create_characters": ["creator", "staff"],
+      "approve_characters": ["staff"],
+      "purchase_characters": ["user", "creator", "staff"],
+      "favorite_characters": ["user", "creator", "staff"]
+    }
+  },
+  "validation_rules": {
+    "name": {
+      "min_length": 2,
+      "max_length": 100,
+      "required": true,
+      "examples": {
+        "valid": ["Elara", "Alex Chen", "Gandalf the Grey"],
+        "invalid": ["A", "", "Nome muito longo que excede o limite de cem caracteres permitidos pelo sistema"]
+      }
+    },
+    "gender": {
+      "allowed_values": ["masculino", "feminino", "nao_binario", "outro"],
+      "required": true,
+      "examples": {
+        "valid": ["masculino", "feminino", "nao_binario", "outro"],
+        "invalid": ["male", "female", "masculino ", "M", "F"]
+      }
+    },
+    "style": {
+      "min_length": 2,
+      "max_length": 100,
+      "required": true,
+      "examples": {
+        "valid": ["Elfa mística", "Guerreiro medieval", "Hacker cyberpunk"],
+        "invalid": ["A", "", "Estilo muito longo que excede completamente o limite de cem caracteres estabelecido"]
+      }
+    },
+    "base_narrative": {
+      "min_length": 10,
+      "max_length": 2000,
+      "required": true,
+      "examples": {
+        "valid": [
+          "Uma elfa de 300 anos que estudou nas bibliotecas antigas...",
+          "Nascido nas ruas de Neo Tokyo, Alex aprendeu a hackear desde criança..."
+        ],
+        "invalid": [
+          "Elfa",
+          "",
+          "História extremamente longa que excede os dois mil caracteres permitidos..."
+        ]
+      }
+    },
+    "roleplay_style": {
+      "min_length": 10,
+      "max_length": 1000,
+      "required": true,
+      "examples": {
+        "valid": [
+          "Fala de forma eloquente e misteriosa, usando metáforas...",
+          "Direto ao ponto, usa gírias tech e fala rápido quando animado..."
+        ],
+        "invalid": [
+          "Fala bem",
+          "",
+          "Estilo muito longo que excede mil caracteres..."
+        ]
+      }
+    },
+    "initial_phrases": {
+      "min_items": 1,
+      "max_items": 10,
+      "type": "array_of_strings",
+      "required": true,
+      "examples": {
+        "valid": [
+          ["Olá, como posso ajudá-lo?"],
+          ["As estrelas sussurram...", "Posso sentir a magia...", "Os ventos carregam..."]
+        ],
+        "invalid": [
+          [],
+          ["Frase 1", "Frase 2", "Frase 3", "Frase 4", "Frase 5", "Frase 6", "Frase 7", "Frase 8", "Frase 9", "Frase 10", "Frase 11"]
+        ]
+      }
+    },
+    "avatar_url": {
+      "format": "url",
+      "required": false,
+      "examples": {
+        "valid": [
+          "https://example.com/avatar.jpg",
+          "https://cdn.tella.com/characters/elara.png",
+          ""
+        ],
+        "invalid": [
+          "not-a-url",
+          "ftp://invalid-protocol.com/file.jpg"
+        ]
+      }
+    },
+    "observations": {
+      "max_length": 1000,
+      "required": false,
+      "examples": {
+        "valid": [
+          "Evita falar sobre seu passado sombrio",
+          "Tem uma fraqueza por doces élficos",
+          ""
+        ],
+        "invalid": [
+          "Observação extremamente longa que excede mil caracteres..."
+        ]
+      }
+    },
+    "negative_words": {
+      "max_items": 20,
+      "type": "array_of_strings",
+      "required": false,
+      "examples": {
+        "valid": [
+          ["violência", "morte"],
+          ["guerra", "sangue", "tortura"],
+          []
+        ],
+        "invalid": [
+          ["palavra1", "palavra2", "palavra3", "palavra4", "palavra5", "palavra6", "palavra7", "palavra8", "palavra9", "palavra10", "palavra11", "palavra12", "palavra13", "palavra14", "palavra15", "palavra16", "palavra17", "palavra18", "palavra19", "palavra20", "palavra21"]
+        ]
+      }
+    },
+    "price": {
+      "min": 0,
+      "max": 1000,
+      "type": "integer",
+      "required": false,
+      "default": 0,
+      "examples": {
+        "valid": [0, 50, 150, 500, 1000],
+        "invalid": [-1, 1001, 50.5, "100", null]
+      }
+    },
+    "pagination": {
+      "page": {
+        "min": 1,
+        "type": "integer",
+        "default": 1
+      },
+      "limit": {
+        "min": 1,
+        "max": 100,
+        "type": "integer",
+        "default": 20
+      }
+    }
+  },
+  "test_scenarios": {
+    "complete_character_creation_flow": {
+      "description": "Fluxo completo: creator cria personagem, staff aprova, usuário compra",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Creator verifica saldo",
+          "method": "GET",
+          "endpoint": "/wallet/balance",
+          "expected_result": "Saldo >= 50 TellaCoins"
+        },
+        {
+          "step": 2,
+          "action": "Creator cria personagem",
+          "method": "POST",
+          "endpoint": "/characters",
+          "payload": {
+            "name": "Elara Nightwhisper",
+            "gender": "feminino",
+            "style": "Elfa mística",
+            "baseNarrative": "Uma elfa antiga com poderes místicos...",
+            "roleplayStyle": "Fala de forma eloquente e misteriosa...",
+            "initialPhrases": ["As estrelas sussurram..."],
+            "price": 150
+          },
+          "expected_result": "Personagem criado, saldo reduzido em 50, is_approved: false"
+        },
+        {
+          "step": 3,
+          "action": "Staff aprova personagem",
+          "method": "PATCH",
+          "endpoint": "/characters/{character_id}/approve",
+          "payload": {
+            "isApproved": true
+          },
+          "expected_result": "is_approved: true"
+        },
+        {
+          "step": 4,
+          "action": "Usuário compra personagem",
+          "method": "POST",
+          "endpoint": "/characters/{character_id}/purchase",
+          "expected_result": "Compra registrada, saldo reduzido em 150"
+        },
+        {
+          "step": 5,
+          "action": "Verificar compra",
+          "method": "GET",
+          "endpoint": "/characters/user/purchases",
+          "expected_result": "Personagem aparece na lista de compras"
+        }
+      ]
+    },
+    "staff_character_creation_flow": {
+      "description": "Staff cria personagem gratuito e já aprovado",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Staff cria personagem",
+          "method": "POST",
+          "endpoint": "/characters",
+          "payload": {
+            "name": "Gandalf",
+            "gender": "masculino",
+            "style": "Mago sábio",
+            "baseNarrative": "Um mago poderoso e sábio...",
+            "roleplayStyle": "Fala com sabedoria ancestral...",
+            "initialPhrases": ["Você não pode passar!"],
+            "price": 0
+          },
+          "expected_result": "Personagem criado gratuitamente, is_approved: true"
+        },
+        {
+          "step": 2,
+          "action": "Verificar personagem público",
+          "method": "GET",
+          "endpoint": "/characters",
+          "expected_result": "Personagem aparece na lista pública imediatamente"
+        }
+      ]
+    },
+    "favorite_and_purchase_flow": {
+      "description": "Usuário favorita e depois compra personagem",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Adicionar aos favoritos",
+          "method": "POST",
+          "endpoint": "/characters/{character_id}/favorite",
+          "expected_result": "action: 'added'"
+        },
+        {
+          "step": 2,
+          "action": "Verificar favoritos",
+          "method": "GET",
+          "endpoint": "/characters/user/favorites",
+          "expected_result": "Personagem na lista de favoritos"
+        },
+        {
+          "step": 3,
+          "action": "Comprar personagem",
+          "method": "POST",
+          "endpoint": "/characters/{character_id}/purchase",
+          "expected_result": "Compra bem-sucedida"
+        },
+        {
+          "step": 4,
+          "action": "Remover dos favoritos",
+          "method": "POST",
+          "endpoint": "/characters/{character_id}/favorite",
+          "expected_result": "action: 'removed'"
+        }
+      ]
+    },
+    "error_scenarios": {
+      "insufficient_balance_creation": {
+        "description": "Creator tenta criar sem saldo suficiente",
+        "action": "POST /characters",
+        "expected_result": "400 - Saldo insuficiente"
+      },
+      "user_tries_to_create": {
+        "description": "Usuário comum tenta criar personagem",
+        "action": "POST /characters",
+        "expected_result": "403 - Acesso negado"
+      },
+      "buy_own_character": {
+        "description": "Creator tenta comprar próprio personagem",
+        "action": "POST /characters/{own_character_id}/purchase",
+        "expected_result": "400 - Não pode comprar próprio personagem"
+      },
+      "buy_duplicate": {
+        "description": "Usuário tenta comprar personagem já comprado",
+        "action": "POST /characters/{character_id}/purchase",
+        "expected_result": "400 - Já possui este personagem"
+      },
+      "non_staff_approve": {
+        "description": "Creator tenta aprovar personagem",
+        "action": "PATCH /characters/{character_id}/approve",
+        "expected_result": "403 - Apenas staff podem aprovar"
+      }
+    }
+  },
+  "groq_integration": {
+    "api_details": {
+      "provider": "Groq",
+      "model": "llama-3.1-8b-instant",
+      "temperature": 0.8,
+      "max_tokens": 1024
+    },
+    "system_prompt": "Você é um especialista em criação de personagens para roleplay...",
+    "input_format": {
+      "user_data": [
+        "name",
+        "gender", 
+        "style",
+        "baseNarrative",
+        "roleplayStyle",
+        "initialPhrases",
+        "observations",
+        "negativeWords"
+      ]
+    },
+    "expected_output": {
+      "format": "JSON",
+      "structure": {
+        "personality": "string",
+        "behavior": "string", 
+        "prompt": "string"
+      }
+    },
+    "error_handling": {
+      "fallback": "Use raw user data as prompt if LLM fails",
+      "retry_logic": "Single attempt, fail fast",
+      "validation": "JSON parsing with graceful degradation"
+    }
+  },
+  "database_schema": {
+    "tella_characters": {
+      "columns": {
+        "id": "UUID PRIMARY KEY",
+        "name": "VARCHAR(100) NOT NULL",
+        "gender": "VARCHAR(20) CHECK (gender IN (...))",
+        "style": "VARCHAR(100) NOT NULL",
+        "base_narrative": "TEXT NOT NULL",
+        "roleplay_style": "TEXT NOT NULL",
+        "initial_phrases": "JSONB DEFAULT '[]'",
+        "avatar_url": "TEXT",
+        "observations": "TEXT",
+        "negative_words": "JSONB DEFAULT '[]'",
+        "llm_prompt": "TEXT NOT NULL",
+        "creator_id": "UUID REFERENCES tella_users(id)",
+        "price": "INTEGER DEFAULT 0 CHECK (price >= 0)",
+        "is_public": "BOOLEAN DEFAULT true",
+        "is_approved": "BOOLEAN DEFAULT false",
+        "is_default": "BOOLEAN DEFAULT false",
+        "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+        "updated_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      },
+      "indexes": [
+        "idx_tella_characters_creator_id",
+        "idx_tella_characters_public_approved",
+        "idx_tella_characters_default",
+        "idx_tella_characters_price"
+      ]
+    },
+    "tella_character_purchases": {
+      "columns": {
+        "id": "UUID PRIMARY KEY",
+        "user_id": "UUID REFERENCES tella_users(id)",
+        "character_id": "UUID REFERENCES tella_characters(id)",
+        "price_paid": "INTEGER CHECK (price_paid >= 0)",
+        "transaction_id": "UUID REFERENCES tella_transactions(id)",
+        "purchased_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      },
+      "constraints": [
+        "UNIQUE(user_id, character_id)"
+      ]
+    },
+    "tella_character_favorites": {
+      "columns": {
+        "id": "UUID PRIMARY KEY",
+        "user_id": "UUID REFERENCES tella_users(id)",
+        "character_id": "UUID REFERENCES tella_characters(id)",
+        "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      },
+      "constraints": [
+        "UNIQUE(user_id, character_id)"
+      ]
+    }
+  },
+  "curl_examples": {
+    "create_character": {
+      "description": "Criar um novo personagem (creator/staff)",
+      "command": "curl -X POST http://localhost:3000/api/v1/characters \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -d '{\n    \"name\": \"Elara Nightwhisper\",\n    \"gender\": \"feminino\",\n    \"style\": \"Elfa mística com cabelos prateados\",\n    \"baseNarrative\": \"Uma elfa de 300 anos que estudou nas bibliotecas antigas de Silverwood...\",\n    \"roleplayStyle\": \"Fala de forma eloquente e misteriosa, frequentemente fazendo referências a eventos antigos...\",\n    \"initialPhrases\": [\"As estrelas sussurram segredos esta noite...\", \"Posso sentir a magia fluindo através de você...\"],\n    \"avatarUrl\": \"https://example.com/elara-avatar.jpg\",\n    \"observations\": \"Evita falar sobre a guerra que destruiu sua família\",\n    \"negativeWords\": [\"violência extrema\", \"morte brutal\"],\n    \"price\": 150\n  }'"
+    },
+    "list_characters": {
+      "description": "Listar personagens públicos",
+      "command": "curl -X GET \"http://localhost:3000/api/v1/characters?page=1&limit=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    },
+    "get_character": {
+      "description": "Obter detalhes de um personagem",
+      "command": "curl -X GET http://localhost:3000/api/v1/characters/550e8400-e29b-41d4-a716-446655440000 \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    },
+    "approve_character": {
+      "description": "Aprovar personagem (staff only)",
+      "command": "curl -X PATCH http://localhost:3000/api/v1/characters/550e8400-e29b-41d4-a716-446655440000/approve \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer STAFF_JWT_TOKEN\" \\\n  -d '{\n    \"isApproved\": true\n  }'"
+    },
+    "purchase_character": {
+      "description": "Comprar um personagem",
+      "command": "curl -X POST http://localhost:3000/api/v1/characters/550e8400-e29b-41d4-a716-446655440000/purchase \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    },
+    "toggle_favorite": {
+      "description": "Adicionar/remover dos favoritos",
+      "command": "curl -X POST http://localhost:3000/api/v1/characters/550e8400-e29b-41d4-a716-446655440000/favorite \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    },
+    "my_characters": {
+      "description": "Listar meus personagens criados",
+      "command": "curl -X GET \"http://localhost:3000/api/v1/characters/user/created?page=1&limit=10\" \\\n  -H \"Authorization: Bearer CREATOR_JWT_TOKEN\""
+    },
+    "my_purchases": {
+      "description": "Listar meus personagens comprados",
+      "command": "curl -X GET \"http://localhost:3000/api/v1/characters/user/purchases?page=1&limit=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    },
+    "my_favorites": {
+      "description": "Listar meus personagens favoritos",
+      "command": "curl -X GET \"http://localhost:3000/api/v1/characters/user/favorites?page=1&limit=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+    }
+  },
+  "error_codes": {
+    "400": {
+      "description": "Bad Request",
+      "common_causes": [
+        "Dados de entrada inválidos",
+        "Saldo insuficiente para criar ou comprar",
+        "Tentativa de comprar próprio personagem",
+        "Tentativa de comprar personagem já possuído",
+        "Personagem não disponível para compra",
+        "Preço fora do range permitido"
+      ]
+    },
+    "401": {
+      "description": "Unauthorized",
+      "common_causes": [
+        "Token JWT não fornecido",
+        "Token JWT inválido ou expirado",
+        "Usuário não autenticado"
+      ]
+    },
+    "403": {
+      "description": "Forbidden",
+      "common_causes": [
+        "Usuário comum tentando criar personagem",
+        "Creator tentando aprovar personagem",
+        "Acesso negado por tipo de usuário"
+      ]
+    },
+    "404": {
+      "description": "Not Found",
+      "common_causes": [
+        "Personagem não encontrado",
+        "Endpoint não existe"
+      ]
+    },
+    "500": {
+      "description": "Internal Server Error",
+      "common_causes": [
+        "Erro na integração com Groq API",
+        "Erro no banco de dados",
+        "Falha no processamento do LLM",
+        "Erro interno do servidor"
+      ]
+    }
+  },
+  "environment_variables": {
+    "required": {
+      "GROQ_API_KEY": "Chave da API do Groq para geração de prompts",
+      "NODE_ENV": "Ambiente (development/production)",
+      "SUPABASE_URL": "URL do projeto Supabase",
+      "SUPABASE_SERVICE_KEY": "Service key do Supabase",
+      "JWT_SECRET": "Chave secreta para JWT"
+    },
+    "optional": {
+      "ALLOWED_ORIGINS": "URLs permitidas para CORS"
+    }
+  },
+  "rate_limits": {
+    "character_creation": "5 requests per minute per user",
+    "character_listing": "100 requests per minute per user",
+    "character_purchase": "10 requests per minute per user",
+    "favorite_toggle": "20 requests per minute per user"
+  },
+  "security_considerations": {
+    "user_role_validation": {
+      "description": "Validação rigorosa de roles em cada endpoint",
+      "implementation": "Middleware requireCreatorOrStaff e requireStaff"
+    },
+    "transaction_atomicity": {
+      "description": "Criação de personagem e débito de moedas em transação atômica",
+      "implementation": "Service layer garante rollback em caso de erro"
+    },
+    "content_moderation": {
+      "description": "Sistema de aprovação por staff para personagens de creators",
+      "implementation": "Campo is_approved controla visibilidade pública"
+    },
+    "input_validation": {
+      "description": "Validação robusta de todos os campos com Zod",
+      "implementation": "Schemas de validação com limites de tamanho e formato"
+    },
+    "llm_safety": {
+      "description": "Tratamento seguro de erros da API Groq",
+      "implementation": "Fallback gracioso, parsing seguro de JSON"
+    }
+  },
+  "performance_optimizations": {
+    "database_indexes": [
+      "Índice composto para personagens públicos e aprovados",
+      "Índices em foreign keys para joins eficientes",
+      "Índice em preço para ordenação por valor"
+    ],
+    "pagination": "Implementada em todas as listagens para evitar sobrecarga",
+    "query_optimization": "Uso de select específico para reduzir transferência de dados",
+    "caching_strategy": "Potencial cache de personagens populares (implementação futura)"
+  },
+  "integration_checklist": {
+    "backend_setup": [
+      "Instalar groq-sdk: npm install groq-sdk",
+      "Configurar GROQ_API_KEY no .env",
+      "Executar migrações SQL (008 e 009)",
+      "Testar integração com Groq API",
+      "Verificar permissões de usuários"
+    ],
+    "frontend_integration": [
+      "Implementar telas de criação de personagem",
+      "Adicionar lista de personagens públicos",
+      "Criar fluxo de compra com confirmação",
+      "Implementar sistema de favoritos",
+      "Adicionar gerenciamento de personagens criados",
+      "Implementar aprovação para staff"
+    ],
+    "testing_scenarios": [
+      "Teste de criação por creator (com cobrança)",
+      "Teste de criação por staff (gratuito)",
+      "Teste de aprovação/rejeição",
+      "Teste de compra com saldo suficiente/insuficiente",
+      "Teste de favoritar/desfavoritar",
+      "Teste de permissões por tipo de usuário",
+      "Teste de integração com Groq API"
+    ]
+  }
+}

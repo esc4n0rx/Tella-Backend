@@ -10,6 +10,7 @@ const { errorHandler } = require('./presentation/middlewares/error-middleware');
 const authRoutes = require('./presentation/routes/auth-routes');
 const walletRoutes = require('./presentation/routes/wallet-routes');
 const stripeRoutes = require('./presentation/routes/stripe-routes');
+const characterRoutes = require('./presentation/routes/character-routes');
 
 const app = express();
 
@@ -21,7 +22,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://local
 app.use(cors({
     origin: allowedOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -44,6 +45,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/wallet', walletRoutes);
 app.use('/api/v1/stripe', stripeRoutes);
+app.use('/api/v1/characters', characterRoutes);
 
 // 404 Handler
 app.use('*', (req, res) => {
